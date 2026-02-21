@@ -1,0 +1,43 @@
+# ---- Web ----
+fastapi>=0.115.0,<1.0
+uvicorn[standard]>=0.32.0,<1.0
+
+# ---- Config & validation ----
+pydantic>=2.0,<3
+pydantic-settings>=2.0,<3
+
+# ---- Database (async app + sync migrations) ----
+SQLAlchemy>=2.0,<3
+asyncpg>=0.30.0
+psycopg2-binary>=2.9
+greenlet>=3.0
+alembic>=1.14,<2
+
+# ---- Migrations (Alembic) ----
+Mako>=1.3
+MarkupSafe>=2.0
+
+# ---- Redis ----
+redis>=5.0
+
+# ---- RabbitMQ ----
+aio-pika>=9.4
+
+# ---- Vector store & object storage ----
+qdrant-client>=1.12
+minio>=7.2
+
+# ---- Auth (JWT, passwords) ----
+python-jose[cryptography]>=3.3
+passlib[bcrypt]>=1.7
+
+# ---- HTTP client ----
+httpx>=0.27
+
+# ---- Utilities ----
+typing_extensions>=4.8
+
+# ---- Tests ----
+pytest>=8.0
+pytest-asyncio>=0.24
+aiosqlite>=0.20
