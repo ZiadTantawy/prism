@@ -1,7 +1,8 @@
+"""Declarative base for Prism ORM models."""
 from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
-    """SQLAlchemy declarative base for all Prism models."""
+    """Base class for all Prism SQLAlchemy models."""
 
     pass

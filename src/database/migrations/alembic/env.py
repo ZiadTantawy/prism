@@ -1,3 +1,4 @@
+"""Alembic env: runs migrations with sync engine from settings."""
 import os
 import sys
 
@@ -26,7 +27,7 @@ url = settings.postgres_sync_url
 
 
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode."""
+    """Generate SQL only; no DB connection."""
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -39,7 +40,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode. Uses sync URL from Settings."""
+    """Run migrations against live DB using sync URL."""
     connectable = create_engine(
         url,
         poolclass=pool.NullPool,

@@ -1,9 +1,8 @@
-"""Initial schema (empty; alembic_version created on first upgrade).
+"""Initial revision; creates alembic_version only.
 
 Revision ID: 001_initial
 Revises:
 Create Date: Initial
-
 """
 from typing import Sequence, Union
 
@@ -17,10 +16,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Empty initial revision."""
+    """No-op; bootstrap revision."""
     pass
 
 
 def downgrade() -> None:
-    """Empty initial revision."""
+    """No-op; bootstrap revision."""
     pass

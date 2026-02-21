@@ -1,4 +1,4 @@
-"""Shared pytest fixtures and config."""
+"""Pytest config and shared fixtures (path setup, event loop)."""
 import asyncio
 import sys
 from pathlib import Path
@@ -15,7 +15,7 @@ if _src.exists() and str(_src) not in sys.path:
 
 @pytest.fixture(scope="session")
 def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
-    """Create event loop for the test session (pytest-asyncio)."""
+    """Session-scoped event loop for pytest-asyncio."""
     loop = asyncio.new_event_loop()
     yield loop
     loop.close()

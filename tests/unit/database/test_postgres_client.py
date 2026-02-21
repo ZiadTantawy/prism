@@ -1,4 +1,4 @@
-"""Tests for the Postgres async client (engine, session, ping, close)."""
+"""Tests for database.postgres.client (engine, session, ping, close)."""
 import importlib.util
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -13,7 +13,7 @@ _SKIP_SQLITE_INTEGRATION = not (_HAS_AIOSQLITE and _HAS_GREENLET)
 
 @pytest.fixture(autouse=True)
 def reset_client_state():
-    """Reset module-level engine/factory so tests don't share state."""
+    """Clear client module engine/factory after each test."""
     yield
     # Clear so next test gets fresh engine when using real settings
     client_module._engine = None

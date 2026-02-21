@@ -1,3 +1,4 @@
+"""App configuration from environment and .env (Pydantic Settings)."""
 import os
 from typing import Optional
 
@@ -8,6 +9,7 @@ _SECRETS_DIR = "/run/secrets" if os.path.isdir("/run/secrets") else None
 
 
 class Settings(BaseSettings):
+    """Environment-backed settings; env vars and optional secrets_dir."""
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -103,6 +105,7 @@ class Settings(BaseSettings):
 
     @property
     def postgres_async_url(self) -> str:
+        """Postgres URL for async driver (asyncpg)."""
         return (
             f"postgresql+asyncpg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD.get_secret_value()}"
             f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
@@ -110,6 +113,7 @@ class Settings(BaseSettings):
 
     @property
     def postgres_sync_url(self) -> str:
+        """Postgres URL for sync driver (psycopg2)."""
         return (
             f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD.get_secret_value()}"
             f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
@@ -117,6 +121,7 @@ class Settings(BaseSettings):
 
     @property
     def rabbitmq_url(self) -> str:
+        """AMQP URL for RabbitMQ."""
         return (
             f"amqp://{self.RABBITMQ_USER}:{self.RABBITMQ_PASSWORD.get_secret_value()}"
             f"@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}/"
@@ -124,12 +129,14 @@ class Settings(BaseSettings):
 
     @property
     def redis_url(self) -> str:
+        """Redis connection URL."""
         if self.REDIS_PASSWORD is not None and self.REDIS_PASSWORD.get_secret_value():
             return f"redis://:{self.REDIS_PASSWORD.get_secret_value()}@{self.REDIS_HOST}:{self.REDIS_PORT}/0"
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
     @property
     def minio_url(self) -> str:
+        """MinIO endpoint URL with credentials."""
         return (
             f"http://{self.MINIO_USER}:{self.MINIO_PASSWORD.get_secret_value()}"
             f"@{self.MINIO_HOST}:{self.MINIO_PORT}"
@@ -137,6 +144,7 @@ class Settings(BaseSettings):
 
     @property
     def qdrant_url(self) -> str:
+        """Qdrant HTTP URL; includes api_key if set."""
         if self.QDRANT_PASSWORD is not None and self.QDRANT_PASSWORD.get_secret_value():
             return (
                 f"http://{self.QDRANT_HOST}:{self.QDRANT_PORT}"
@@ -146,6 +154,7 @@ class Settings(BaseSettings):
 
     @property
     def airflow_url(self) -> str:
+        """Postgres URL for Airflow metadata DB."""
         return (
             f"postgresql+psycopg2://{self.AIRFLOW_USER}:{self.AIRFLOW_PASSWORD.get_secret_value()}"
             f"@{self.AIRFLOW_HOST}:{self.AIRFLOW_PORT}/{self.AIRFLOW_DB}"
@@ -153,10 +162,12 @@ class Settings(BaseSettings):
 
     @property
     def prometheus_url(self) -> str:
+        """Prometheus scrape base URL."""
         return f"http://{self.PROMETHEUS_HOST}:{self.PROMETHEUS_PORT}"
 
     @property
     def grafana_url(self) -> str:
+        """Grafana base URL with auth."""
         return (
             f"http://{self.GRAFANA_USER}:{self.GRAFANA_PASSWORD.get_secret_value()}"
             f"@{self.GRAFANA_HOST}:{self.GRAFANA_PORT}"
@@ -164,6 +175,7 @@ class Settings(BaseSettings):
 
     @property
     def ollama_url(self) -> str:
+        """Ollama API base URL."""
         return f"http://{self.OLLAMA_HOST}:{self.OLLAMA_PORT}"
 
 

@@ -1,8 +1,4 @@
-"""
-Postgres: async engine + session factory from settings.postgres_async_url.
-Uses SQLAlchemy (asyncpg driver). Exposes engine, session factory,
-get_session helper, ping, and close for lifecycle.
-"""
+"""Async Postgres engine and session factory (SQLAlchemy + asyncpg)."""
 
 import threading
 from contextlib import asynccontextmanager
@@ -24,7 +20,7 @@ _init_lock = threading.Lock()
 
 
 def _ensure_engine() -> AsyncEngine:
-    """Create engine and session factory once (thread-safe)."""
+    """Create engine and session factory once, thread-safe."""
     global _engine, _session_factory
     if _engine is not None:
         return _engine
@@ -49,12 +45,12 @@ def _ensure_engine() -> AsyncEngine:
 
 
 def get_engine() -> AsyncEngine:
-    """Return the async SQLAlchemy engine (creates on first use)."""
+    """Return the async engine; creates on first use."""
     return _ensure_engine()
 
 
 def get_session_factory() -> async_sessionmaker[AsyncSession]:
-    """Return the async session factory (creates engine on first use)."""
+    """Return the async session factory; creates engine on first use."""
     _ensure_engine()
     assert _session_factory is not None
     return _session_factory
@@ -62,7 +58,7 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
 
 @asynccontextmanager
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    """Session scope: commit on success, rollback on error, always close."""
+    """Yield a session; commit on success, rollback on error, always close."""
     factory = get_session_factory()
     session: AsyncSession = factory()
     try:
@@ -76,7 +72,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def ping() -> bool:
-    """Verify the database connection is alive (e.g. for health checks)."""
+    """Return True if the database is reachable."""
     try:
         factory = get_session_factory()
         session: AsyncSession = factory()
@@ -90,7 +86,7 @@ async def ping() -> bool:
 
 
 async def close() -> None:
-    """Dispose the engine and clear module state. Call on app shutdown."""
+    """Dispose the engine and clear module state; call on shutdown."""
     global _engine, _session_factory
     if _engine is not None:
         await _engine.dispose()
