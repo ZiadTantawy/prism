@@ -45,33 +45,20 @@ class Settings(BaseSettings):
     REDIS_PORT: int = Field(default=6379)
     REDIS_PASSWORD: Optional[SecretStr] = Field(default=None)
 
-    # MinIO
-    MINIO_USER: str = Field(alias="MINIO_ROOT_USER", default="minioadmin")
-    MINIO_PASSWORD: SecretStr = Field(alias="MINIO_ROOT_PASSWORD")
-    MINIO_HOST: str = Field(default="minio")
-    MINIO_PORT: int = Field(default=9000)
-
     # Qdrant
     QDRANT_HOST: str = Field(default="qdrant")
     QDRANT_PORT: int = Field(default=6333)
     QDRANT_PASSWORD: Optional[SecretStr] = Field(default=None)
+    QDRANT_NEWS_COLLECTION: str = Field(default="news_embeddings", description="Global news summary embeddings collection")
+    QDRANT_RAG_SHARED_COLLECTION: str = Field(default="rag_shared", description="Shared RAG collection for free-tier users (filter by user_id)")
+    EMBEDDING_DIM: int = Field(default=768, description="Vector size for Qdrant collections (match embedding model)")
 
-    # Airflow (metadata DB)
+    # Airflow (optional; host runs its own Airflow; only needed if Prism connects to Airflow metadata DB)
     AIRFLOW_USER: str = Field(alias="AIRFLOW_POSTGRES_USER", default="airflow")
-    AIRFLOW_PASSWORD: SecretStr = Field(alias="AIRFLOW_POSTGRES_PASSWORD")
+    AIRFLOW_PASSWORD: Optional[SecretStr] = Field(alias="AIRFLOW_POSTGRES_PASSWORD", default=None)
     AIRFLOW_DB: str = Field(alias="AIRFLOW_POSTGRES_DB", default="airflow")
     AIRFLOW_HOST: str = Field(default="airflow-db")
     AIRFLOW_PORT: int = Field(default=5432)
-
-    # Prometheus
-    PROMETHEUS_HOST: str = Field(default="prometheus")
-    PROMETHEUS_PORT: int = Field(default=9090)
-
-    # Grafana
-    GRAFANA_USER: str = Field(alias="GRAFANA_ADMIN_USER", default="admin")
-    GRAFANA_PASSWORD: SecretStr = Field(alias="GRAFANA_ADMIN_PASSWORD")
-    GRAFANA_HOST: str = Field(default="grafana")
-    GRAFANA_PORT: int = Field(default=3000)
 
     # Ollama
     OLLAMA_HOST: str = Field(default="localhost")
@@ -153,8 +140,10 @@ class Settings(BaseSettings):
         return f"http://{self.QDRANT_HOST}:{self.QDRANT_PORT}"
 
     @property
-    def airflow_url(self) -> str:
-        """Postgres URL for Airflow metadata DB."""
+    def airflow_url(self) -> str | None:
+        """Postgres URL for Airflow metadata DB; None if not configured."""
+        if self.AIRFLOW_PASSWORD is None:
+            return None
         return (
             f"postgresql+psycopg2://{self.AIRFLOW_USER}:{self.AIRFLOW_PASSWORD.get_secret_value()}"
             f"@{self.AIRFLOW_HOST}:{self.AIRFLOW_PORT}/{self.AIRFLOW_DB}"

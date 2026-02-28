@@ -1,46 +1,60 @@
 """Async Postgres engine and session factory (SQLAlchemy + asyncpg)."""
 
+import logging
 import threading
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional
-from core.config import settings
+from typing import Any, AsyncGenerator, Optional
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
-# Lazy-initialized module-level engine and session factory
+logger = logging.getLogger(__name__)
+
+# Lazy-initialized module-level engine and session factory (set via init())
 _engine: Optional[AsyncEngine] = None
 _session_factory: Optional[async_sessionmaker[AsyncSession]] = None
 _init_lock = threading.Lock()
+_url: Optional[str] = None
+_pool_options: dict[str, Any] = {}
+
+
+def init(url: str, *, pool_size: int = 5, max_overflow: int = 10, echo: bool = False) -> None:
+    """Configure the client with the given URL and pool options. Call once at app startup (e.g. from deps or lifespan)."""
+    global _url, _pool_options
+    with _init_lock:
+        _url = url
+        _pool_options = { "pool_size": pool_size, "max_overflow": max_overflow, "echo": echo }
 
 
 def _ensure_engine() -> AsyncEngine:
-    """Create engine and session factory once, thread-safe."""
+    """Create engine and session factory once, thread-safe. Requires init() to have been called."""
     global _engine, _session_factory
     if _engine is not None:
         return _engine
     with _init_lock:
         if _engine is None:
-            url = settings.postgres_async_url
-            _engine = create_async_engine(
-                url,
-                pool_size=settings.DATABASE_POOL_SIZE,
-                max_overflow=settings.DATABASE_POOL_MAX_OVERFLOW,
-                pool_pre_ping=True,
-                echo=settings.DATABASE_ECHO,
-            )
-            _session_factory = async_sessionmaker(
-                _engine,
-                class_=AsyncSession,
-                expire_on_commit=False,
-                autocommit=False,
-                autoflush=False,
-            )
+            if _url is None:
+                msg = "Postgres client not initialized. Call init(url, ...) at app startup (e.g. from deps or lifespan)."
+                logger.error(msg)
+                raise RuntimeError(msg)
+            try:
+                _engine = create_async_engine(
+                    _url,
+                    pool_size=_pool_options.get("pool_size", 5),
+                    max_overflow=_pool_options.get("max_overflow", 10),
+                    pool_pre_ping=True,
+                    echo=_pool_options.get("echo", False),
+                )
+                _session_factory = async_sessionmaker(
+                    _engine,
+                    class_=AsyncSession,
+                    expire_on_commit=False,
+                    autocommit=False,
+                    autoflush=False,
+                )
+            except Exception as e:
+                logger.exception("Failed to create async Postgres engine: %s", e)
+                raise
     return _engine
 
 
@@ -64,7 +78,8 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     try:
         yield session
         await session.commit()
-    except Exception:
+    except Exception as e:
+        logger.exception("Session error; rolling back transaction: %s", e)
         await session.rollback()
         raise
     finally:
@@ -81,14 +96,22 @@ async def ping() -> bool:
             return True
         finally:
             await session.close()
-    except Exception:
+    except Exception as e:
+        logger.debug("Postgres ping failed: %s", e, exc_info=True)
         return False
 
 
 async def close() -> None:
     """Dispose the engine and clear module state; call on shutdown."""
-    global _engine, _session_factory
+    global _engine, _session_factory, _url, _pool_options
     if _engine is not None:
-        await _engine.dispose()
-        _engine = None
-        _session_factory = None
+        try:
+            await _engine.dispose()
+        except Exception as e:
+            logger.exception("Error while disposing Postgres engine: %s", e)
+            raise
+        finally:
+            _engine = None
+            _session_factory = None
+            _url = None
+            _pool_options = {}
