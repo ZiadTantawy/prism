@@ -1,0 +1,5 @@
+-r ../shared/requirements.txt
+
+# API-specific
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0

@@ -1,0 +1,5 @@
+-r ../shared/requirements.txt
+
+# DB-specific
+alembic>=1.13.0
+
